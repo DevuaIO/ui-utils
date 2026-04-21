@@ -10,7 +10,7 @@ per-URL (or any context) exceptions declared as rules instead of inline conditio
 ## Quick start
 
 ```ts
-import {CleanSense} from "@devua-labs/ui-utils";
+import {CleanSense} from "@devua-lab/ui-utils";
 
 const cleaner = new CleanSense({allowNull: true});
 
@@ -158,7 +158,7 @@ list is compiled only once.
 
 ```ts
 import type {InternalAxiosRequestConfig} from "axios";
-import {CleanSense} from "@devua-labs/ui-utils";
+import {CleanSense} from "@devua-lab/ui-utils";
 
 const dataCleaner = new CleanSense({allowNull: true, allowEmptyArray: true})
     .addRule("/requisites/create", {allowEmptyString: true})
