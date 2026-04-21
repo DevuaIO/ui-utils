@@ -1,11 +1,12 @@
 {
-  "name": "@devua-labs/ui-utils",
-  "version": "1.0.0",
+  "name": "@devua-lab/ui-utils",
+  "version": "1.0.2",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc -p tsconfig.app.json && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "deploy:npm": "npm publish --access public"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.12",
@@ -14,9 +15,7 @@
     "vite": "^8.0.9",
     "vite-plugin-dts": "^4.5.4"
   },
-  "files": [
-    "dist"
-  ],
+  "files": ["dist"],
   "main": "./dist/main.js",
   "types": "./dist/main.d.ts",
   "exports": {
