@@ -1,6 +1,5 @@
-import { defineConfig } from "vite";
 import { resolve } from "node:path";
-import { copyFileSync, existsSync, rmSync } from "node:fs";
+import { defineConfig } from "vite";
 import dts from "vite-plugin-dts";
 
 export default defineConfig({
@@ -15,15 +14,11 @@ export default defineConfig({
     dts({
       rollupTypes: false,
       tsconfigPath: "./tsconfig.json",
-      afterBuild() {
-        const fromDir = resolve("dist", "src");
-        const from = resolve(fromDir, "main.d.ts");
-        const to   = resolve("dist", "main.d.ts");
-
-        if (existsSync(from)) {
-          copyFileSync(from, to);
-          rmSync(fromDir, { recursive: true, force: true });
-        }
+      entryRoot: "src",
+      outDir: "dist",
+      staticImport: true,
+      compilerOptions: {
+        rootDir: "src",
       },
     }),
   ],
