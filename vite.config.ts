@@ -14,6 +14,9 @@ export default defineConfig({
       formats: ["es"],
       fileName: (_format, entryName) => `${entryName}.js`,
     },
+    rolldownOptions: {
+      external: ["react", "react-dom", "zustand"],
+    },
   },
   plugins: [
     dts({

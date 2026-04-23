@@ -1,6 +1,6 @@
 {
   "name": "@devua-lab/ui-utils",
-  "version": "2.1.0",
+  "version": "2.1.2",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -16,7 +16,7 @@
     "vite-plugin-dts": "^4.5.4"
   },
   "peerDependencies": {
-    "react": ">=18",
+    "react": ">=19",
     "zustand": ">=5"
   },
   "files": ["dist"],
