@@ -5,18 +5,21 @@ import dts from "vite-plugin-dts";
 export default defineConfig({
   build: {
     lib: {
-      entry: resolve("src", "main.ts"),
-      fileName: "[name]",
+      entry: {
+        main: resolve("src", "main.ts"),
+        string: resolve("src", "string", "index.ts"),
+        types: resolve("src", "types", "index.ts"),
+      },
       formats: ["es"],
+      fileName: (_format, entryName) => `${entryName}.js`,
     },
   },
   plugins: [
     dts({
-      rollupTypes: false,
+      rollupTypes: true,
       tsconfigPath: "./tsconfig.json",
       entryRoot: "src",
       outDir: "dist",
-      staticImport: true,
       compilerOptions: {
         rootDir: "src",
       },
