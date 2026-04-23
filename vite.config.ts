@@ -9,6 +9,7 @@ export default defineConfig({
         main: resolve("src", "main.ts"),
         string: resolve("src", "string", "index.ts"),
         types: resolve("src", "types", "index.ts"),
+        react: resolve("src", "react", "index.ts"),
       },
       formats: ["es"],
       fileName: (_format, entryName) => `${entryName}.js`,
