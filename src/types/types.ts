@@ -12,6 +12,32 @@ export type Nullable<T> = T | null;
 export type Nullish<T> = Nullable<T> | undefined;
 
 /**
- * Makes every property of `T` — including nested ones — optional.
+ * Recursively makes every property of `T` optional, mirroring the shape that
+ * {@link diff} produces.
+ *
+ * Unlike a naive recursive partial, arrays (and readonly arrays / tuples) are
+ * preserved **whole** rather than being deep-partialed. This matches
+ * {@link diff}'s atomic array handling: a changed array is returned in full,
+ * never as a sparse, index-keyed fragment. Primitive properties keep their
+ * original type.
+ *
+ * @typeParam T - The object type the diff was computed from.
+ *
+ * @example
+ * ```ts
+ * type User = { id: number; tags: string[]; meta: { seen: boolean } };
+ * type D = DeepPartial<User>;
+ * // {
+ * //   id?: number;
+ * //   tags?: string[];              // whole array, not partialed
+ * //   meta?: { seen?: boolean };    // nested object is recursed
+ * // }
+ * ```
+ *
+ * @public
  */
-export type DeepPartial<T> = T extends object ? { [K in keyof T]?: DeepPartial<T[K]> } : T;
+export type DeepPartial<T> = T extends readonly unknown[]
+  ? T
+  : T extends object
+    ? { [K in keyof T]?: DeepPartial<T[K]> }
+    : T;
