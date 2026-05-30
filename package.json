@@ -1,6 +1,6 @@
 {
   "name": "@devua-lab/ui-utils",
-  "version": "2.1.5",
+  "version": "2.1.6",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -42,5 +42,8 @@
       "import": "./dist/react.js",
       "types": "./dist/react.d.ts"
     }
+  },
+  "dependencies": {
+    "dequal": "^2.0.3"
   }
 }
