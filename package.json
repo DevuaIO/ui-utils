@@ -1,6 +1,6 @@
 {
   "name": "@devua-lab/ui-utils",
-  "version": "2.1.4",
+  "version": "2.1.5",
   "type": "module",
   "scripts": {
     "dev": "vite",
