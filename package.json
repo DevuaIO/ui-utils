@@ -6,11 +6,15 @@
     "dev": "vite",
     "build": "tsc -p tsconfig.app.json && vite build",
     "preview": "vite preview",
-    "deploy:npm": "npm publish --access public"
+    "deploy:npm": "npm publish --access public",
+    "lint": "biome lint ./src",
+    "format": "biome format ./src --write",
+    "check": "biome check --write ./src"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.12",
     "@types/node": "^25.6.0",
+    "@types/react": "^19.2.15",
     "typescript": "~6.0.3",
     "vite": "^8.0.9",
     "vite-plugin-dts": "^4.5.4"
@@ -19,7 +23,9 @@
     "react": ">=19",
     "zustand": ">=5"
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "sideEffects": false,
   "exports": {
     ".": {
