@@ -23,7 +23,7 @@ export default defineConfig({
   },
   plugins: [
     dts({
-      rollupTypes: true,
+      rollupTypes: false,
       tsconfigPath: "./tsconfig.app.json",
       entryRoot: "src",
       outDir: "dist",
