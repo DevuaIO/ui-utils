@@ -260,7 +260,7 @@ export class CleanSense {
   process<T = unknown>(value: T, ctx: RuleContext = {}): T {
     const matchedOptions = this.rules
       .filter((rule) => matchRule(rule.matcher, ctx))
-      .reduce<CleanOptions>((acc, rule) => ({ ...acc, ...rule.options }), {});
+      .reduce<CleanOptions>((acc, rule) => Object.assign(acc, rule.options), {});
 
     const resolvedOptions: CleanOptions = {
       ...this.globalOptions,
