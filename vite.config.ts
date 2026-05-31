@@ -1,4 +1,5 @@
 import { resolve } from "node:path";
+import { fileURLToPath, URL } from "node:url";
 import { defineConfig } from "vite";
 import dts from "vite-plugin-dts";
 
@@ -7,8 +8,10 @@ export default defineConfig({
     lib: {
       entry: {
         main: resolve("src", "main.ts"),
+        symbol: resolve("src", "symbol.ts"),
         string: resolve("src", "string", "index.ts"),
         types: resolve("src", "types", "index.ts"),
+        decorator: resolve("src", "decorator", "index.ts"),
         react: resolve("src", "react", "index.ts"),
       },
       formats: ["es"],
@@ -21,7 +24,7 @@ export default defineConfig({
   plugins: [
     dts({
       rollupTypes: true,
-      tsconfigPath: "./tsconfig.json",
+      tsconfigPath: "./tsconfig.app.json",
       entryRoot: "src",
       outDir: "dist",
       compilerOptions: {
@@ -29,4 +32,9 @@ export default defineConfig({
       },
     }),
   ],
+  resolve: {
+    alias: {
+      "@": fileURLToPath(new URL("./src", import.meta.url)),
+    },
+  },
 });

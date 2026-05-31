@@ -1,0 +1,131 @@
+import { useStore } from "zustand";
+import type { AppErrorResponse, ErrorSerializer } from "@/utils/error-serialization";
+import type { ContractKey, ContractState } from "./store";
+import {
+  contractStore,
+  EMPTY_CONTRACT_STATE,
+  failContract,
+  getContractId,
+  getContractSerializer,
+  startContract,
+  successContract,
+} from "./store";
+
+export type { ContractFn, ContractKey, ContractState } from "./store";
+export {
+  contractStore,
+  EMPTY_CONTRACT_STATE,
+  failContract,
+  getContractId,
+  getContractSerializer,
+  resetContract,
+  startContract,
+  successContract,
+} from "./store";
+
+/**
+ * Lifecycle callbacks (and optional serializer override) for {@link contract}.
+ *
+ * @typeParam R - The value the procedure resolves to.
+ *
+ * @public
+ */
+export interface ContractOptions<R = unknown> {
+  /** Called with the procedure's result after it succeeds. */
+  onSuccess?: (result: R) => void;
+  /** Called with the serialized error if the procedure throws. */
+  onError?: (error: AppErrorResponse) => void;
+  /** Called after success or failure, always. */
+  onFinally?: () => void;
+  /**
+   * Serializer for this call. Defaults to the one carried by a `@Tracked`
+   * target. Required when `target` is a string id (it carries none).
+   */
+  serializer?: ErrorSerializer;
+}
+
+/**
+ * Runs an async procedure as a tracked contract: flips loading on, runs it, and
+ * on failure serializes the thrown error and stores it under the contract id —
+ * all readable through {@link useContract}.
+ *
+ * @remarks
+ * The serializer comes from `options.serializer`, falling back to the one
+ * attached to a `@Tracked` target via `@Tracked({ serializer })`. A string key
+ * carries no serializer, so pass one in `options`. Errors are surfaced through
+ * `onError` and `useContract`, never rethrown — call sites need no `try/catch`.
+ *
+ * @typeParam R - The procedure's resolved value.
+ * @param target - A `@Tracked` function or a string id.
+ * @param run - The procedure to run and track (may issue any number of requests).
+ * @param options - Lifecycle callbacks and optional serializer.
+ * @returns The procedure's result, or `undefined` if it failed.
+ *
+ * @example
+ * Function key — serializer travels with `@Tracked({ serializer })`:
+ * ```ts
+ * contract(Service.Deposit.create, async () => {
+ *   await Service.Deposit.create(payload);
+ * });
+ * ```
+ *
+ * @example
+ * String key — pass the serializer:
+ * ```ts
+ * contract(CONTRACT_CREATE_TEMPLATE, async () => {
+ *   await Service.Deposit.create(payload);
+ *   await Service.Manager.update(payload2);
+ * }, { serializer });
+ * ```
+ *
+ * @public
+ */
+export async function contract<R = unknown>(
+  target: ContractKey,
+  run: () => Promise<R> | R,
+  options?: ContractOptions<R>
+): Promise<R | undefined> {
+  const id = getContractId(target);
+  const serializer = options?.serializer ?? getContractSerializer(target);
+
+  if (!serializer) {
+    throw new Error(
+      "[contract] no serializer available — decorate the target with @Tracked({ serializer }), " +
+        "or pass options.serializer (required for string keys)."
+    );
+  }
+
+  startContract(id);
+
+  try {
+    const result = await run();
+    successContract(id);
+    options?.onSuccess?.(result);
+    return result;
+  } catch (err) {
+    const serialized = serializer.process(err);
+    failContract({ id, errors: serialized });
+    options?.onError?.(serialized);
+    return undefined;
+  } finally {
+    options?.onFinally?.();
+  }
+}
+
+/**
+ * Reads the live loading/error state of a contract.
+ *
+ * @remarks
+ * Pass the same key as {@link contract} — a `@Tracked` function or a string id.
+ * Re-renders only when that contract's slice changes; untouched contracts
+ * return {@link EMPTY_CONTRACT_STATE}. `errors` is the full `AppErrorResponse`.
+ *
+ * @param target - A `@Tracked` function or a string id.
+ * @returns `{ loading, errors }`.
+ *
+ * @public
+ */
+export function useContract(target: ContractKey): ContractState {
+  const id = getContractId(target);
+  return useStore(contractStore, (state) => state.contracts[id] ?? EMPTY_CONTRACT_STATE);
+}

@@ -63,17 +63,14 @@ diff(a, c);
 ### `diff(a, b)`
 
 ```ts
-function diff<T extends object>(a: T, b: Nullish<T>): Nullish<DeepPartial<T>>;
+function diff<T extends object>(a: T, b: Nullable<T>): Nullable<DeepPartial<T>>;
 ```
 
-Compares baseline `a` against candidate `b` and returns a [`DeepPartial<T>`](#deeppartialt) describing how to turn `a`
-into `b`, expressed entirely in terms of `b`'s values — or `null` when there is no difference.
+Compares baseline `a` against candidate `b` and returns a [`DeepPartial<T>`](../../types/DeepPartial) describing how to
+turn `a` into `b`, expressed entirely in terms of `b`'s values — or `null` when there is no difference.
 
 - `a` — the baseline (original) object.
-- `b` — the candidate (updated) object. May be `null` / `undefined` (`Nullish<T>`).
-
-> `Nullish<T>` is the package's `T | null | undefined`. In practice `diff` only ever returns `DeepPartial<T>` or
-> `null` — never `undefined`.
+- `b` — the candidate (updated) object. May be `null` ([`Nullable<T>`](../../types/Nullable)).
 
 #### How each value is handled
 
@@ -90,35 +87,9 @@ into `b`, expressed entirely in terms of `b`'s values — or `null` when there i
   from `a`).
 - **Deletions are not reported.** Keys present in `a` but missing from `b` do not appear — iteration is driven by `b`'s
   keys. Compute removals separately if you need them.
-- **No-op returns `null`**, not an empty object — when `b` is nullish, when `a === b`, or when nothing differs. A falsy
+- **No-op returns `null`**, not an empty object — when `b` is `null`, when `a === b`, or when nothing differs. A falsy
   result means "nothing changed".
 - **Not symmetric.** `diff(a, b)` is generally not equal to `diff(b, a)`.
-
----
-
-### `DeepPartial<T>`
-
-```ts
-type DeepPartial<T> = T extends readonly unknown[]
-    ? T
-    : T extends object
-        ? { [K in keyof T]?: DeepPartial<T[K]> }
-        : T;
-```
-
-The element type carried by `diff`'s return value. Every property is optional and recursed into — **except arrays**,
-which stay whole rather than being deep-partialed, mirroring `diff`'s atomic array handling.
-
-```ts
-type User = {id: number; tags: string[]; meta: {seen: boolean}};
-
-type D = DeepPartial<User>;
-// {
-//   id?: number;
-//   tags?: string[];           // whole array, not partialed
-//   meta?: { seen?: boolean };  // nested object is recursed
-// }
-```
 
 ---
 
@@ -127,9 +98,8 @@ type D = DeepPartial<User>;
 ### No-op cases
 
 ```ts
-diff(a, a);          // → null  (same reference)
-diff(a, null);       // → null  (nullish candidate)
-diff(a, undefined);  // → null  (nullish candidate)
+diff(a, a);           // → null  (same reference)
+diff(a, null);        // → null  (null candidate)
 diff({x: 1}, {x: 1}); // → null  (deeply equal)
 ```
 

@@ -1,1 +1,4 @@
-export type { DeepPartial, ExpectedAny, Nullable, Nullish } from "./types";
+export type { DeepPartial } from "./DeepPartial";
+export type { ExpectedAny } from "./ExpectedAny";
+export type { Nullable } from "./Nullable";
+export type { Nullish } from "./Nullish";

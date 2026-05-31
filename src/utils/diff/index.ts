@@ -1,5 +1,5 @@
 import { dequal } from "dequal";
-import type { DeepPartial, Nullish } from "../../types";
+import type { DeepPartial, Nullable } from "@/types";
 
 /**
  * Narrows a value to a plain object — an object literal or one created via
@@ -42,9 +42,8 @@ function isPlainObject(v: unknown): v is Record<string, unknown> {
  *   not appear in the result, since iteration is driven by `b`'s keys. If you
  *   need removals, compute them separately (e.g. a complementary pass).
  * - **No-op semantics.** Returns `null` — not an empty object — when `b`
- *   is `null`/`undefined`, when `a` and `b` are the same reference, or when no
- *   differences are found. This lets callers treat a falsy result as "nothing
- *   changed".
+ *   is `null`, when `a` and `b` are the same reference, or when no differences
+ *   are found. This lets callers treat a falsy result as "nothing changed".
  * - The function is **not symmetric**: `diff(a, b)` is generally not equal to
  *   `diff(b, a)`.
  *
@@ -53,16 +52,15 @@ function isPlainObject(v: unknown): v is Record<string, unknown> {
  *
  * @typeParam T - The shape of both operands.
  * @param a - The baseline (original) object to compare against.
- * @param b - The candidate (updated) object. May be `null`/`undefined`.
+ * @param b - The candidate (updated) object. May be `null`.
  * @returns A {@link DeepPartial} of `T` containing the changed and added keys
  *   from `b`, or `null` when there is no difference.
  *
  * @example
- * Identical or nullish input yields `null`:
+ * Identical or `null` input yields `null`:
  * ```ts
- * diff(a, a);         // => null
- * diff(a, null);      // => null
- * diff(a, undefined); // => null
+ * diff(a, a);    // => null
+ * diff(a, null); // => null
  * ```
  *
  * @example
@@ -86,7 +84,7 @@ function isPlainObject(v: unknown): v is Record<string, unknown> {
  *
  * @public
  */
-export function diff<T extends object>(a: T, b: Nullish<T>): Nullish<DeepPartial<T>> {
+export function diff<T extends object>(a: T, b: Nullable<T>): Nullable<DeepPartial<T>> {
   if (b == null || a === b) return null;
 
   const result: Record<string, unknown> = {};

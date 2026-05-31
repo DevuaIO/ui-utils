@@ -1,32 +1,22 @@
 import { create } from "zustand";
+import { PING_ID } from "@/symbol";
 
 /**
  * Any value that can be used as a ping channel identifier.
  *
+ * @remarks
  * - Strings and numbers are used verbatim.
- * - Functions are identified by their `name` property, optionally
- *   augmented with a `Symbol.for("ping.id")` marker for stable
- *   cross-file identity (useful when functions are wrapped by
- *   decorators and the original `name` is no longer reliable).
- * - Objects that expose a `Symbol.for("ping.id")` string property
- *   use that value directly.
+ * - Functions are identified by their `name` (`fn:<name>`), optionally
+ *   overridden by a {@link PING_ID} marker for stable cross-file identity —
+ *   useful when functions are wrapped by decorators and the original `name` is
+ *   no longer reliable.
+ * - Objects exposing a {@link PING_ID} string property use that value directly.
+ *
+ * Resolve a key to its canonical string form with {@link pingKey}.
+ *
+ * @public
  */
 export type PingKey = string | number | ((...args: never[]) => unknown) | { [PING_ID]: string };
-
-/**
- * Well-known symbol consumers can attach to a function or object to
- * control the ping identity explicitly. Registered via `Symbol.for`
- * so it's stable across module boundaries and package duplicates.
- *
- * @example
- *   const myMethod = Object.assign(
- *     async () => { ... },
- *     { [PING_ID]: "requisites.list" }
- *   );
- *   emit(myMethod);    // pings "requisites.list"
- *   usePing(myMethod); // listens on "requisites.list"
- */
-export const PING_ID: unique symbol = Symbol.for("ping.id") as never;
 
 interface PingStore {
   counters: Record<string, number>;
@@ -60,40 +50,58 @@ function toStringKey(key: PingKey): string {
 }
 
 /**
- * Converts a PingKey to its stable string form. Exposed so callers that
- * build their own dependency arrays can derive the exact identity used
- * internally by `usePing` and `emit`.
+ * Converts a {@link PingKey} to its stable string form.
+ *
+ * @remarks
+ * Exposed so callers building their own dependency arrays can derive the exact
+ * identity {@link usePing} and {@link ping} use internally.
+ *
+ * @param key - The key to resolve.
+ * @returns The canonical string identity for `key`.
+ *
+ * @public
  */
 export function pingKey(key: PingKey): string {
   return toStringKey(key);
 }
 
 /**
- * Lightweight event bus built for one narrow purpose — signaling that
- * "something happened" so downstream consumers can re-run work (refetch
- * queries, re-render, re-trigger effects). Does NOT carry payloads; treat
- * it as a ping, not a message.
+ * Lightweight event bus for one narrow purpose: signaling that "something
+ * happened" so downstream consumers can re-run work — refetch queries,
+ * re-render, re-trigger effects.
  *
- * The returned `tick` is a monotonically increasing counter for the given
- * key. Include it in a React Query `queryKey`, `useEffect` deps, or any
- * other dependency list to re-run when someone calls `emit(key)`
- * elsewhere in the app.
+ * @remarks
+ * This bus carries **no payload** — it is a ping, not a message. The returned
+ * `tick` is a monotonically increasing counter for `key`; include it in a React
+ * Query `queryKey`, a `useEffect` dependency list, or any other deps array to
+ * re-run when someone calls `emit(key)` (or {@link ping}) elsewhere.
  *
- * Calling `usePing()` without an argument returns just `{ emit }` for
- * components that only fire events and never listen.
+ * Called without an argument, it returns just `{ emit }` for components that
+ * only fire pings and never listen. To pass data along with the signal, use
+ * {@link useEvent} instead.
+ *
+ * @param key - The channel to observe. Omit for an emit-only consumer.
+ * @returns `{ tick, emit }` — `tick` is the current counter for `key` (`0` when
+ *   no key is given), `emit` bumps a channel's counter.
  *
  * @example
- *   // emitter side
- *   const { emit } = usePing();
- *   emit("REQUISITES_UPDATED");
+ * Emitter side:
+ * ```ts
+ * const { emit } = usePing();
+ * emit("REQUISITES_UPDATED");
+ * ```
  *
  * @example
- *   // listener side — refetch a query on every ping
- *   const { tick } = usePing("REQUISITES_UPDATED");
- *   const { data } = useQuery({
- *     queryKey: ["requisites", tick],
- *     queryFn: fetchRequisites,
- *   });
+ * Listener side — refetch a query on every ping:
+ * ```ts
+ * const { tick } = usePing("REQUISITES_UPDATED");
+ * const { data } = useQuery({
+ *   queryKey: ["requisites", tick],
+ *   queryFn: fetchRequisites,
+ * });
+ * ```
+ *
+ * @public
  */
 export function usePing(key?: PingKey): { tick: number; emit: (key: PingKey) => void } {
   const bump = usePingStore((s) => s.bump);
@@ -106,14 +114,20 @@ export function usePing(key?: PingKey): { tick: number; emit: (key: PingKey) => 
 }
 
 /**
- * Non-hook version of `emit`, usable from service methods, event
- * handlers, or anywhere outside React components.
+ * Non-hook version of {@link usePing}'s `emit`, usable from service methods,
+ * event handlers, or anywhere outside React components.
+ *
+ * @param key - The channel to ping.
  *
  * @example
- *   async function onCreate() {
- *     await api.create(payload);
- *     ping("REQUISITES_UPDATED");
- *   }
+ * ```ts
+ * async function onCreate() {
+ *   await api.create(payload);
+ *   ping("REQUISITES_UPDATED");
+ * }
+ * ```
+ *
+ * @public
  */
 export function ping(key: PingKey): void {
   usePingStore.getState().bump(toStringKey(key));
