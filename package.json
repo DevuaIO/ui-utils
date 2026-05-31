@@ -1,11 +1,9 @@
 {
   "name": "@devua-lab/ui-utils",
-  "version": "2.2.0",
+  "version": "2.2.1",
   "type": "module",
   "scripts": {
-    "dev": "vite",
     "build": "tsc -p tsconfig.app.json && vite build",
-    "preview": "vite preview",
     "deploy:npm": "npm publish --access public",
     "lint": "biome lint ./src",
     "format": "biome format ./src --write",
@@ -34,11 +32,11 @@
     },
     "./string": {
       "import": "./dist/string.js",
-      "types": "./dist/string.d.ts"
+      "types": "./dist/string/index.d.ts"
     },
     "./types": {
       "import": "./dist/types.js",
-      "types": "./dist/types.d.ts"
+      "types": "./dist/types/index.d.ts"
     },
     "./symbol": {
       "import": "./dist/symbol.js",
@@ -46,11 +44,11 @@
     },
     "./decorator": {
       "import": "./dist/decorator.js",
-      "types": "./dist/decorator.d.ts"
+      "types": "./dist/decorator/index.d.ts"
     },
     "./react": {
       "import": "./dist/react.js",
-      "types": "./dist/react.d.ts"
+      "types": "./dist/react/index.d.ts"
     }
   },
   "dependencies": {
