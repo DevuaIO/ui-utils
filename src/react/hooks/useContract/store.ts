@@ -58,19 +58,69 @@ export function failContract(payload: { id: string; errors: AppErrorResponse }):
 }
 
 /**
+ * Deletes a value at a dot-notation path inside a validation map.
+ *
+ * Handles two layouts produced by the serializer plugins:
+ * - **Flat keys** (Axios dot-notation, e.g. literal `"settings.0.input"`):
+ *   matched directly and removed.
+ * - **Nested paths** (e.g. `settings → [0] → input`): traversed segment by
+ *   segment, deleting only the leaf. Numeric segments index into arrays.
+ *
+ * Missing paths are a no-op.
+ *
+ * @internal
+ */
+function deleteAtPath(root: Record<string, unknown>, path: string): void {
+  // Flat literal key — e.g. AxiosErrorPlugin's dot-notation output.
+  if (Object.hasOwn(root, path)) {
+    delete root[path];
+    return;
+  }
+
+  const segments = path.split(".");
+  let current: unknown = root;
+
+  for (let i = 0; i < segments.length - 1; i++) {
+    if (current === null || typeof current !== "object") return;
+    current = (current as Record<string, unknown>)[segments[i]];
+  }
+
+  if (current !== null && typeof current === "object") {
+    const leaf = segments[segments.length - 1];
+    // Property deletion (works for both object keys and array indices;
+    // array holes are fine — we never reindex, so sibling paths stay valid).
+    delete (current as Record<string, unknown>)[leaf];
+  }
+}
+
+/**
+ * Recursively checks whether a validation map has any remaining leaf values,
+ * ignoring empty objects/arrays left behind after granular deletions.
+ *
+ * @internal
+ */
+function hasRemainingErrors(value: unknown): boolean {
+  if (value === null || value === undefined) return false;
+  if (typeof value !== "object") return true;
+
+  const entries = Array.isArray(value) ? value : Object.values(value);
+  return entries.some(hasRemainingErrors);
+}
+
+/**
  * Resets a contract's error state.
  *
  * Without `granular`, removes the contract's entry entirely (back to
  * {@link EMPTY_CONTRACT_STATE}). With `granular`, keeps the contract but
- * deletes only the listed keys from `errors.validation` — useful for
- * clearing a single field's error as the user edits it, while leaving
- * the rest intact.
+ * deletes only the listed paths from `errors.validation` — dot-notation
+ * paths like `"settings.0.input"` traverse nested structures, while a plain
+ * key like `"amount"` clears a top-level field.
  *
- * If clearing granular keys empties the `validation` map and there's no
- * global error, the whole entry is removed.
+ * If clearing the granular paths leaves no validation errors and there's no
+ * global message, the whole entry is removed.
  *
  * @param id - The contract id (already resolved from a key).
- * @param granular - Optional list of `validation` keys to clear.
+ * @param granular - Optional list of `validation` paths to clear.
  *
  * @public
  */
@@ -88,15 +138,15 @@ export function resetContract(id: string, granular?: string[]): void {
     const validation = current.errors?.validation;
     if (!validation) return state;
 
-    const nextValidation = { ...validation };
-    for (const key of granular) {
-      delete nextValidation[key];
+    // Deep clone so we don't mutate the stored object.
+    const nextValidation = structuredClone(validation) as Record<string, unknown>;
+    for (const path of granular) {
+      deleteAtPath(nextValidation, path);
     }
 
-    const hasValidation = Object.keys(nextValidation).length > 0;
+    const hasValidation = hasRemainingErrors(nextValidation);
     const hasGlobal = !!current.errors?.global;
 
-    // Nothing left to show → drop the whole entry.
     if (!hasValidation && !hasGlobal) {
       const next = { ...state.contracts };
       delete next[id];

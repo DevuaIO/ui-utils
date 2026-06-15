@@ -91,23 +91,42 @@ function resetContract(target: ContractKey, granular?: string[]): void;
 Clears a contract's error state, keyed the same way as `contract`.
 
 - `target` — a `@Tracked` function or a string id.
-- `granular` — optional list of `errors.validation` keys to clear instead of the whole entry.
+- `granular` — optional list of `errors.validation` paths to clear instead of the whole entry.
 
 **Without `granular`** the entire contract is removed and `useContract` falls back to `EMPTY_CONTRACT_STATE`.
 
-**With `granular`** only the listed field keys are deleted from `errors.validation`; any other field errors and the
-global message stay intact. If clearing those keys leaves `validation` empty and there is no `global` message, the whole
+**With `granular`** only the listed paths are deleted from `errors.validation`; any other field errors and the global
+message stay intact. If clearing those paths leaves no validation errors and there is no `global` message, the whole
 entry is dropped automatically.
 
-> `granular` keys target the flat `validation` map. If your `ZodErrorPlugin` uses `structure: "nested"`, only top-level
-> keys can be cleared this way.
+#### Path syntax
+
+Each `granular` entry is a dot-notation path into `errors.validation`:
+
+| Path                                | Targets                                                   |
+|-------------------------------------|-----------------------------------------------------------|
+| `"amount"`                          | A top-level field.                                        |
+| `"settings.0.input"`                | A nested value — `settings → [0] → input`.                |
+| `"method_data.2.commission_rate"`   | An array element's field (numeric segments index arrays). |
+
+Resolution tries the **literal flat key first** (matching `AxiosErrorPlugin`'s dot-notation output, e.g. a real key
+`"settings.0.input"`), then falls back to **segment traversal** for nested structures (e.g. `ZodErrorPlugin` with
+`structure: "nested"`). Only the leaf is removed — array elements are deleted in place without reindexing, so other
+paths in the same call stay valid. Missing paths are a no-op.
 
 ```ts
 // clear everything
 resetContract(Service.Deposit.create);
 
-// clear one field's error as the user edits it
+// clear a single top-level field as the user edits it
 resetContract(Service.Deposit.create, ["amount"]);
+
+// clear nested and array-indexed paths together
+resetContract(Service.Merchant.addMethods, [
+    "method_data.0.settings.commission_rate",
+    "amount",
+    "settings.2.input",
+]);
 ```
 
 #### Clearing a field error on edit
