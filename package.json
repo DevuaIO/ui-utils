@@ -1,6 +1,6 @@
 {
   "name": "@devua-lab/ui-utils",
-  "version": "2.2.1",
+  "version": "2.2.2",
   "type": "module",
   "scripts": {
     "build": "tsc -p tsconfig.app.json && vite build",
