@@ -63,14 +63,16 @@ diff(a, c);
 ### `diff(a, b)`
 
 ```ts
-function diff<T extends object>(a: T, b: Nullable<T>): Nullable<DeepPartial<T>>;
+function diff<T extends object>(a: Nullable<T>, b: Nullable<T>): Nullable<DeepPartial<T>>;
 ```
 
 Compares baseline `a` against candidate `b` and returns a [`DeepPartial<T>`](../../types/DeepPartial) describing how to
 turn `a` into `b`, expressed entirely in terms of `b`'s values — or `null` when there is no difference.
 
-- `a` — the baseline (original) object.
-- `b` — the candidate (updated) object. May be `null` ([`Nullable<T>`](../../types/Nullable)).
+- `a` — the baseline (original) object. May be `null` or `undefined` ([`Nullable<T>`](../../types/Nullable)).
+- `b` — the candidate (updated) object. May be `null` or `undefined` ([`Nullable<T>`](../../types/Nullable)).
+
+If **either** operand is `null` or `undefined`, the result is `null` — see [No-op cases](#no-op-cases).
 
 #### How each value is handled
 
@@ -87,8 +89,8 @@ turn `a` into `b`, expressed entirely in terms of `b`'s values — or `null` whe
   from `a`).
 - **Deletions are not reported.** Keys present in `a` but missing from `b` do not appear — iteration is driven by `b`'s
   keys. Compute removals separately if you need them.
-- **No-op returns `null`**, not an empty object — when `b` is `null`, when `a === b`, or when nothing differs. A falsy
-  result means "nothing changed".
+- **No-op returns `null`**, not an empty object — when either operand is `null`/`undefined`, when `a === b`, or when
+  nothing differs. A falsy result means "nothing changed".
 - **Not symmetric.** `diff(a, b)` is generally not equal to `diff(b, a)`.
 
 ---
@@ -97,9 +99,14 @@ turn `a` into `b`, expressed entirely in terms of `b`'s values — or `null` whe
 
 ### No-op cases
 
+Returns `null` when either operand is nullish, when both are the same reference, or when they are deeply equal.
+
 ```ts
 diff(a, a);           // → null  (same reference)
 diff(a, null);        // → null  (null candidate)
+diff(a, undefined);   // → null  (undefined candidate)
+diff(null, b);        // → null  (null baseline)
+diff(undefined, b);   // → null  (undefined baseline)
 diff({x: 1}, {x: 1}); // → null  (deeply equal)
 ```
 
