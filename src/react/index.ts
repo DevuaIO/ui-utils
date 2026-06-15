@@ -1,4 +1,4 @@
-export { type ContractOptions, contract, useContract } from "./hooks/useContract";
+export { type ContractOptions, contract, resetContract, useContract } from "./hooks/useContract";
 export {
   type ContractFn,
   type ContractKey,
@@ -8,7 +8,6 @@ export {
   failContract,
   getContractId,
   getContractSerializer,
-  resetContract,
   startContract,
   successContract,
 } from "./hooks/useContract/store";
