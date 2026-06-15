@@ -15,3 +15,4 @@ export { useDebounce } from "./hooks/useDebounce";
 export { emit, useEvent } from "./hooks/useEvent";
 export { type PingKey, ping, pingKey, usePing } from "./hooks/usePing";
 export { useThrottle } from "./hooks/useThrottle";
+export { useViewport } from "./hooks/useViewport";

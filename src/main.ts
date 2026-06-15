@@ -1,4 +1,5 @@
 export { type CleanOptions, CleanSense, type Matcher, type RuleContext } from "./utils/clean-sense";
+export { DateTime } from "./utils/datetime";
 export { diff } from "./utils/diff";
 export { Enums } from "./utils/enums";
 export {
