@@ -57,12 +57,61 @@ export function failContract(payload: { id: string; errors: AppErrorResponse }):
   }));
 }
 
-/** Removes a contract's entry, resetting it to {@link EMPTY_CONTRACT_STATE}. */
-export function resetContract(id: string): void {
+/**
+ * Resets a contract's error state.
+ *
+ * Without `granular`, removes the contract's entry entirely (back to
+ * {@link EMPTY_CONTRACT_STATE}). With `granular`, keeps the contract but
+ * deletes only the listed keys from `errors.validation` — useful for
+ * clearing a single field's error as the user edits it, while leaving
+ * the rest intact.
+ *
+ * If clearing granular keys empties the `validation` map and there's no
+ * global error, the whole entry is removed.
+ *
+ * @param id - The contract id (already resolved from a key).
+ * @param granular - Optional list of `validation` keys to clear.
+ *
+ * @public
+ */
+export function resetContract(id: string, granular?: string[]): void {
   contractStore.setState((state) => {
-    const next = { ...state.contracts };
-    delete next[id];
-    return { contracts: next };
+    const current = state.contracts[id];
+    if (!current) return state;
+
+    if (!granular || granular.length === 0) {
+      const next = { ...state.contracts };
+      delete next[id];
+      return { contracts: next };
+    }
+
+    const validation = current.errors?.validation;
+    if (!validation) return state;
+
+    const nextValidation = { ...validation };
+    for (const key of granular) {
+      delete nextValidation[key];
+    }
+
+    const hasValidation = Object.keys(nextValidation).length > 0;
+    const hasGlobal = !!current.errors?.global;
+
+    // Nothing left to show → drop the whole entry.
+    if (!hasValidation && !hasGlobal) {
+      const next = { ...state.contracts };
+      delete next[id];
+      return { contracts: next };
+    }
+
+    return {
+      contracts: {
+        ...state.contracts,
+        [id]: {
+          ...current,
+          errors: current.errors ? { ...current.errors, validation: nextValidation } : null,
+        },
+      },
+    };
   });
 }
 

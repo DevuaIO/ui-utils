@@ -7,6 +7,7 @@ import {
   failContract,
   getContractId,
   getContractSerializer,
+  resetContract as resetContractById,
   startContract,
   successContract,
 } from "./store";
@@ -18,7 +19,6 @@ export {
   failContract,
   getContractId,
   getContractSerializer,
-  resetContract,
   startContract,
   successContract,
 } from "./store";
@@ -128,4 +128,35 @@ export async function contract<R = unknown>(
 export function useContract(target: ContractKey): ContractState {
   const id = getContractId(target);
   return useStore(contractStore, (state) => state.contracts[id] ?? EMPTY_CONTRACT_STATE);
+}
+
+/**
+ * Resets a contract's error state, keyed the same way as {@link contract}.
+ *
+ * @remarks
+ * With no `granular` argument, clears the entire contract back to
+ * {@link EMPTY_CONTRACT_STATE}. With `granular`, removes only the listed
+ * field keys from `errors.validation`, leaving any other field errors and
+ * the global message intact — handy for clearing one field's error as the
+ * user fixes it.
+ *
+ * @param target - A `@Tracked` function or a string id.
+ * @param granular - Optional `validation` keys to clear instead of the whole entry.
+ *
+ * @example
+ * Clear everything:
+ * ```ts
+ * resetContract(Service.Deposit.create);
+ * ```
+ *
+ * @example
+ * Clear a single field's error as the user types:
+ * ```ts
+ * resetContract(Service.Deposit.create, ["amount"]);
+ * ```
+ *
+ * @public
+ */
+export function resetContract(target: ContractKey, granular?: string[]): void {
+  resetContractById(getContractId(target), granular);
 }

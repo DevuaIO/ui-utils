@@ -81,3 +81,49 @@ function useContract(target: ContractKey): ContractState;
 
 Returns `{ loading, errors }`; `errors` is the full `AppErrorResponse` or `null`. Passing an untagged function throws —
 apply `@Tracked` or pass a string id. Keys must be stable references (a string constant or a singleton method).
+
+### `resetContract(target, granular?)`
+
+```ts
+function resetContract(target: ContractKey, granular?: string[]): void;
+```
+
+Clears a contract's error state, keyed the same way as `contract`.
+
+- `target` — a `@Tracked` function or a string id.
+- `granular` — optional list of `errors.validation` keys to clear instead of the whole entry.
+
+**Without `granular`** the entire contract is removed and `useContract` falls back to `EMPTY_CONTRACT_STATE`.
+
+**With `granular`** only the listed field keys are deleted from `errors.validation`; any other field errors and the
+global message stay intact. If clearing those keys leaves `validation` empty and there is no `global` message, the whole
+entry is dropped automatically.
+
+> `granular` keys target the flat `validation` map. If your `ZodErrorPlugin` uses `structure: "nested"`, only top-level
+> keys can be cleared this way.
+
+```ts
+// clear everything
+resetContract(Service.Deposit.create);
+
+// clear one field's error as the user edits it
+resetContract(Service.Deposit.create, ["amount"]);
+```
+
+#### Clearing a field error on edit
+
+```ts
+const {loading, errors} = useContract(Service.Deposit.create);
+
+const onAmountChange = (value: string) => {
+    setAmount(value);
+    resetContract(Service.Deposit.create, ["amount"]);
+};
+
+<Input
+    value={amount}
+    onChange={onAmountChange}
+    slots={{errorText: errors?.validation?.amount}}
+    invalid={!!errors?.validation?.amount}
+/>;
+```
