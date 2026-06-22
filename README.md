@@ -37,6 +37,7 @@ pnpm add @devua-lab/ui-utils
 | :--- | :--- |
 | **[useContract](./src/react/hooks/useContract)** | Runs an async procedure as a tracked unit with automatic error serialization. |
 | **[useDebounce](./src/react/hooks/useDebounce)** | Debounced state — an immediate value plus a copy that lags behind until updates pause. |
+| **[useDraft](./src/react/hooks/useDraft)** | Local editable copy of a server-owned object — tracks edits, detects dirty state, and syncs upstream without clobbering in-progress work. |
 | **[useEvent](./src/react/hooks/useEvent)** | A tiny keyed event bus on zustand to emit payloads from anywhere and subscribe in React. |
 | **[usePing](./src/react/hooks/usePing)** | Payload-less event bus to bump a counter so consumers re-run, refetch, or re-render. |
 | **[useThrottle](./src/react/hooks/useThrottle)** | Throttled state — an immediate value plus a copy that updates at most once per interval. |

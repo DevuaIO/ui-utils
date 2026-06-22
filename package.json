@@ -1,6 +1,6 @@
 {
   "name": "@devua-lab/ui-utils",
-  "version": "2.2.8",
+  "version": "2.2.9",
   "type": "module",
   "scripts": {
     "build": "tsc -p tsconfig.app.json && vite build",
@@ -18,10 +18,10 @@
     "vite-plugin-dts": "^4.5.4"
   },
   "peerDependencies": {
-    "react": ">=19",
-    "zustand": ">=5",
     "axios": ">=1",
-    "zod": ">=4"
+    "react": ">=19",
+    "zod": ">=4",
+    "zustand": ">=5"
   },
   "files": ["dist"],
   "sideEffects": false,
@@ -52,6 +52,7 @@
     }
   },
   "dependencies": {
-    "dequal": "^2.0.3"
+    "dequal": "^2.0.3",
+    "immer": "^11.1.8"
   }
 }
