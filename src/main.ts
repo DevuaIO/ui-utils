@@ -12,3 +12,4 @@ export {
   ZodErrorPlugin,
   type ZodSerializationOptions,
 } from "./utils/error-serialization";
+export { Money } from "./utils/money";
