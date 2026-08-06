@@ -12,4 +12,5 @@ export {
   ZodErrorPlugin,
   type ZodSerializationOptions,
 } from "./utils/error-serialization";
+export { isNullish } from "./utils/is-nullish";
 export { Money } from "./utils/money";

@@ -1,6 +1,6 @@
 {
   "name": "@devua-lab/ui-utils",
-  "version": "2.2.9",
+  "version": "2.3.0",
   "type": "module",
   "scripts": {
     "build": "tsc -p tsconfig.app.json && vite build",
@@ -22,6 +22,11 @@
     "react": ">=19",
     "zod": ">=4",
     "zustand": ">=5"
+  },
+  "peerDependenciesMeta": {
+    "axios": { "optional": true },
+    "zod": { "optional": true },
+    "zustand": { "optional": true }
   },
   "files": ["dist"],
   "sideEffects": false,

@@ -48,21 +48,47 @@ export class DateTime {
       return DateTime.getRelativeTime(dateObj, locale);
     }
 
-    let timezone: string | undefined;
-
-    if (typeof window !== "undefined" && window.localStorage) {
-      try {
-        const storedTz = localStorage.getItem("timezone");
-        if (storedTz && storedTz !== DEFAULT_TIMEZONE) {
-          timezone = storedTz;
-        }
-      } catch {
-        // ...
-      }
-    }
+    const timezone = DateTime.readStoredTimezone();
 
     const formatString = options?.format ?? DEFAULT_FORMAT;
     return DateTime.getAbsoluteTime(dateObj, formatString, timezone);
+  }
+
+  /**
+   * Reads the user's timezone out of local storage.
+   *
+   * The key is written by `@sovgut/state`, whose `LocalState.set` always runs
+   * the value through `JSON.stringify`. A plain string therefore lands in
+   * storage quoted - `"\"Europe/Kyiv\""`, not `Europe/Kyiv` - and handing that
+   * to `Intl.DateTimeFormat` throws `RangeError`. Reading it raw is why the
+   * timezone used to be dropped silently: the throw was swallowed downstream
+   * and the date came back formatted in the local zone.
+   *
+   * Decode the way `LocalState.get` does, so both writers are understood: parse
+   * as JSON, and fall back to the raw string when it is not valid JSON.
+   */
+  private static readStoredTimezone(): string | undefined {
+    if (typeof window === "undefined" || !window.localStorage) return undefined;
+
+    let raw: null | string;
+    try {
+      raw = localStorage.getItem("timezone");
+    } catch {
+      return undefined;
+    }
+
+    if (raw === null) return undefined;
+
+    let decoded: unknown;
+    try {
+      decoded = JSON.parse(raw);
+    } catch {
+      decoded = raw;
+    }
+
+    if (typeof decoded !== "string" || !decoded || decoded === DEFAULT_TIMEZONE) return undefined;
+
+    return decoded;
   }
 
   private static getRelativeTime(date: Date, locale: string): string {

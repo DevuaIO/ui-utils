@@ -26,6 +26,7 @@ pnpm add @devua-lab/ui-utils
 | **[diff](./src/utils/diff)** | Structural diff that returns only what changed, keeping arrays whole. |
 | **[Enums](./src/utils/enums)** | Extracts a TypeScript enum into a clean `{ key, value }[]` without reverse-mapping noise. |
 | **[error-serialization](./src/utils/error-serialization)** | Standardized error serialization pipeline for Zod, Axios, and native errors. |
+| **[isNullish](./src/utils/is-nullish)** | Type guard for `null` or `undefined`, narrowing on both branches. |
 | **[Money](./src/utils/money)** | Cents ↔ float conversion — precise, nullish-safe, string-aware. |
 | **[DateTime](./src/utils/datetime)** | Format a date as an absolute string or a relative time — timezone-aware, nullish-safe. |
 
@@ -62,3 +63,4 @@ pnpm add @devua-lab/ui-utils
 | **[ExpectedAny](./src/types/ExpectedAny)** | An intentional, lint-safe escape hatch for `any`. |
 | **[Nullable](./src/types/Nullable)** | A value that may be of type `T` or explicitly `null`. |
 | **[Nullish](./src/types/Nullish)** | A value that may be of type `T`, `null`, or `undefined`. |
+| **[Primitive](./src/types/Primitive)** | Any JavaScript primitive: `bigint`, `boolean`, `number`, `string`, `symbol`, `null` or `undefined`. |
