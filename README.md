@@ -23,6 +23,7 @@ pnpm add @devua-lab/ui-utils
 | Name | Description |
 | :--- | :--- |
 | **[CleanSense](./src/utils/clean-sense)** | Recursive empty-value filter with context-aware rule overrides. |
+| **[contract](./src/utils/contract)** | Contract runtime behind `@Tracked` and `useContract` - id-keyed loading/error store and the runner that drives it. |
 | **[diff](./src/utils/diff)** | Structural diff that returns only what changed, keeping arrays whole. |
 | **[Enums](./src/utils/enums)** | Extracts a TypeScript enum into a clean `{ key, value }[]` without reverse-mapping noise. |
 | **[error-serialization](./src/utils/error-serialization)** | Standardized error serialization pipeline for Zod, Axios, and native errors. |
@@ -50,7 +51,7 @@ pnpm add @devua-lab/ui-utils
 
 | Name | Description |
 | :--- | :--- |
-| **[@Tracked](./src/decorator/Tracked)** | Tags a function with a stable contract ID and serializer for `useContract` integration. |
+| **[@Tracked](./src/decorator/Tracked)** | Runs a class's methods as tracked contracts - catches, serializes and stores their errors for `useContract`. |
 | **[@Validate](./src/decorator/Validate)** | Validates a method's arguments positionally against Zod schemas before execution. |
 
 ---

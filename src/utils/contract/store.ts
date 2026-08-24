@@ -34,15 +34,65 @@ export const EMPTY_CONTRACT_STATE: ContractState = { loading: false, errors: nul
  */
 export const contractStore = createStore<ContractStoreState>(() => ({ contracts: {} }));
 
+/**
+ * How many runs are in flight per contract id. A `@Tracked` method called from
+ * inside a `contract()` keyed by the same id runs nested, and only the outermost
+ * run may settle the entry, or the inner one would clear `loading` (or delete the
+ * entry outright) while the outer procedure is still working.
+ *
+ * @internal
+ */
+const activeRuns = new Map<string, number>();
+
+/**
+ * The most recent failure, stamped with a monotonic sequence number so a
+ * `contract()` can tell whether anything failed while its procedure ran.
+ *
+ * @internal
+ */
+let failureSequence = 0;
+let latestFailure: Nullable<{ sequence: number; id: string; errors: AppErrorResponse }> = null;
+
+/**
+ * Current position in the failure sequence, taken before a procedure starts.
+ *
+ * @internal
+ */
+export function failureCheckpoint(): number {
+  return failureSequence;
+}
+
+/**
+ * The failure recorded after `checkpoint`, if any. A `@Tracked` method swallows
+ * its own error, so an enclosing `contract()` sees a resolved procedure and asks
+ * here whether that resolution was real.
+ *
+ * @internal
+ */
+export function failureSince(checkpoint: number): Nullable<{ id: string; errors: AppErrorResponse }> {
+  if (!latestFailure || latestFailure.sequence <= checkpoint) return null;
+  return { id: latestFailure.id, errors: latestFailure.errors };
+}
+
 /** Marks a contract as running and clears its previous error. */
 export function startContract(id: string): void {
+  const depth = (activeRuns.get(id) ?? 0) + 1;
+  activeRuns.set(id, depth);
+
   contractStore.setState((state) => ({
-    contracts: { ...state.contracts, [id]: { loading: true, errors: null } },
+    contracts: {
+      ...state.contracts,
+      // A nested run keeps whatever a sibling call already recorded; only the
+      // outermost start opens a clean slate.
+      [id]: { loading: true, errors: depth === 1 ? null : (state.contracts[id]?.errors ?? null) },
+    },
   }));
 }
 
 /** Clears a contract's entry on success. */
 export function successContract(id: string): void {
+  if (settleRun(id) > 0) return;
+
   contractStore.setState((state) => {
     const next = { ...state.contracts };
     delete next[id];
@@ -52,9 +102,27 @@ export function successContract(id: string): void {
 
 /** Records a serialized error for a contract and stops its loading state. */
 export function failContract(payload: { id: string; errors: AppErrorResponse }): void {
+  const depth = settleRun(payload.id);
+
+  failureSequence += 1;
+  latestFailure = { sequence: failureSequence, id: payload.id, errors: payload.errors };
+
   contractStore.setState((state) => ({
-    contracts: { ...state.contracts, [payload.id]: { loading: false, errors: payload.errors } },
+    contracts: { ...state.contracts, [payload.id]: { loading: depth > 0, errors: payload.errors } },
   }));
+}
+
+/**
+ * Closes one run of a contract and returns how many are still in flight.
+ * A settle with no matching start counts as the outermost run.
+ *
+ * @internal
+ */
+function settleRun(id: string): number {
+  const depth = (activeRuns.get(id) ?? 1) - 1;
+  if (depth > 0) activeRuns.set(id, depth);
+  else activeRuns.delete(id);
+  return depth;
 }
 
 /**

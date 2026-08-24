@@ -3,8 +3,9 @@
 Validates a method's arguments against Zod schemas, positionally, before the method body runs.
 
 Each schema is matched to the argument at the same position; `null` or `undefined` skips that parameter. On failure it
-throws the original `ZodError` — inside a [`contract`](../../react/hooks/useContract) procedure that error is caught,
-serialized, and surfaced through `useContract`, so payloads are validated in one place: the service.
+throws the original `ZodError`. On a [`@Tracked`](../Tracked) method, or inside a
+[`contract`](../../react/hooks/useContract) procedure, that error is caught, serialized and surfaced through
+`useContract`, so payloads are validated in one place: the service.
 
 ---
 
@@ -52,8 +53,8 @@ the body.
 
 ## Behavior
 
-The thrown error is the unmodified `ZodError`. Pair the method with [`@Tracked`](../Tracked) and run it through
-[`contract`](../../react/hooks/useContract): the [`ZodErrorPlugin`](../../utils/error-serialization) turns the issues
-into `errors.validation`, keyed by field, ready for the form.
+The thrown error is the unmodified `ZodError`. Pair the method with [`@Tracked`](../Tracked): the
+[`ZodErrorPlugin`](../../utils/error-serialization) turns the issues into `errors.validation`, keyed by field, ready for
+the form.
 
 Schemas beyond the number of arguments are ignored; arguments without a schema pass through untouched.

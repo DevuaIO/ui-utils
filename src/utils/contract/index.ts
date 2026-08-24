@@ -2,6 +2,8 @@ import type { AppErrorResponse, ErrorSerializer } from "@/utils/error-serializat
 import type { ContractKey } from "./store";
 import {
   failContract,
+  failureCheckpoint,
+  failureSince,
   getContractId,
   getContractSerializer,
   resetContract as resetContractById,
@@ -52,6 +54,11 @@ export interface ContractOptions<R = unknown> {
  * carries no serializer, so pass one in `options`. Errors are surfaced through
  * `onError` and `useContract`, never rethrown — call sites need no `try/catch`.
  *
+ * A `@Tracked` method handles its own error and resolves with `undefined`, so a
+ * procedure built from tracked calls resolves even when a step failed. The
+ * contract therefore also fails when a tracked call fails while it runs, and
+ * adopts that already-serialized error instead of serializing it a second time.
+ *
  * @typeParam R - The procedure's resolved value.
  * @param target - A `@Tracked` function or a string id.
  * @param run - The procedure to run and track (may issue any number of requests).
@@ -92,10 +99,19 @@ export async function contract<R = unknown>(
     );
   }
 
+  const checkpoint = failureCheckpoint();
   startContract(id);
 
   try {
     const result = await run();
+    const failed = failureSince(checkpoint);
+
+    if (failed) {
+      failContract({ id, errors: failed.errors });
+      options?.onError?.(failed.errors);
+      return undefined;
+    }
+
     successContract(id);
     options?.onSuccess?.(result);
     return result;

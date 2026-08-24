@@ -8,8 +8,9 @@ type Schemas = ReadonlyArray<Nullish<ZodType>>;
  * Pass `null`/`undefined` to skip a parameter.
  *
  * @remarks
- * Throws the original `ZodError` on failure. Inside a `contract` procedure that
- * error is caught, serialized, and surfaced via `useContract`.
+ * Throws the original `ZodError` on failure. On a `@Tracked` method, or inside a
+ * `contract` procedure, that error is caught, serialized and surfaced via
+ * `useContract`.
  *
  * @example
  * ```ts

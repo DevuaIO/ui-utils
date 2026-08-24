@@ -3,10 +3,15 @@
 Run a procedure — one request or many — as a single tracked unit, and read its loading/error state anywhere.
 
 `contract(key, run, options?)` flips loading on, runs the procedure, and on failure serializes the thrown error (through
-the registered serializer — see [`error-serialization`](../../../utils/error-serialization)) and stores it under `key`.
+the registered serializer - see [`error-serialization`](../../../utils/error-serialization)) and stores it under `key`.
 `useContract(key)` reads that state. No pre-validation, no `try/catch` at the call site.
 
 > The serializer travels with `@Tracked({ serializer })`; for string-key contracts pass `{ serializer }` to `contract`.
+
+A single [`@Tracked`](../../../decorator/Tracked) method is already a contract on its own - call it directly and read it
+with `useContract`. Reach for `contract()` to track several calls as one unit, or to key a call under a string of your
+own. Because a tracked call resolves with `undefined` rather than throwing, `contract()` also fails when one of them
+fails, adopting the error it already serialized.
 
 ---
 
@@ -62,9 +67,10 @@ function contract<R>(
 ): Promise<R | undefined>;
 ```
 
-- `target` — a `@Tracked` function or a string id (the same key `useContract` takes).
-- `run` — the procedure; may issue any number of requests.
-- Returns the result, or `undefined` if it failed (the error is in `useContract` / `onError`).
+- `target` - a `@Tracked` function or a string id (the same key `useContract` takes).
+- `run` - the procedure; may issue any number of requests.
+- Returns the result, or `undefined` if the procedure threw or a tracked call inside it failed (the error is in
+  `useContract` / `onError`).
 
 | Option       | Type                                | Description                                  |
 |--------------|-------------------------------------|----------------------------------------------|
