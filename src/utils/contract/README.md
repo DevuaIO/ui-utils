@@ -72,9 +72,10 @@ slate.
 
 ## Adopting a failure
 
-A tracked call resolves with `undefined` instead of throwing, so a procedure built from tracked calls resolves even when
-a step failed. A runner that only watched for a thrown error would call `successContract` and delete the error the
-tracked call had just written.
+A tracked call rejects, so a failed step normally aborts the procedure and the rejection reaches `contract()`'s own
+`catch`. A procedure that swallows one - a `try/catch` of its own, a `void`-ed call it never awaits - would leave a
+runner that only watched for a thrown error calling `successContract` and deleting the error the tracked call had just
+written.
 
 So the store stamps every failure with a monotonic sequence number, and `contract()` takes a checkpoint before running
 its procedure:
@@ -92,8 +93,8 @@ serialized once, so an `ErrorSerializer.subscribe` side effect - a toast, a log 
 contracts the failure passes through.
 
 The window is wall-clock, not the async call tree, which the browser gives no way to follow. A tracked call that fails
-while an unrelated contract happens to be in flight is attributed to that contract as well. Nothing is thrown either
-way, and the failing call still records its own id.
+while an unrelated contract happens to be in flight is attributed to that contract as well. The contract still resolves
+rather than throwing either way, and the failing call still records its own id.
 
 ---
 

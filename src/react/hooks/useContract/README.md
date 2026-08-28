@@ -9,9 +9,9 @@ the registered serializer - see [`error-serialization`](../../../utils/error-ser
 > The serializer travels with `@Tracked({ serializer })`; for string-key contracts pass `{ serializer }` to `contract`.
 
 A single [`@Tracked`](../../../decorator/Tracked) method is already a contract on its own - call it directly and read it
-with `useContract`. Reach for `contract()` to track several calls as one unit, or to key a call under a string of your
-own. Because a tracked call resolves with `undefined` rather than throwing, `contract()` also fails when one of them
-fails, adopting the error it already serialized.
+with `useContract`. Reach for `contract()` to track several calls as one unit, to key a call under a string of your
+own, or to let a failed call abort the work that was to follow it - a tracked call rejects, and `contract()` is what
+catches that without a `try/catch` at the call site.
 
 ---
 

@@ -1,7 +1,7 @@
 # Tracked
 
-Runs a class's methods as tracked contracts: loading on, the thrown error caught, serialized and stored under a stable
-id, `undefined` returned in its place. Read the outcome with [`useContract`](../../react/hooks/useContract).
+Runs a class's methods as tracked contracts: loading on, and a thrown error serialized and stored under a stable id on
+its way past the wrapper. Read the outcome with [`useContract`](../../react/hooks/useContract).
 
 The id is `ClassName.methodName`. It doubles as the [`usePing`](../../react/hooks/usePing) channel and as the key for
 `contract`, `useContract` and `resetContract` - pass the method itself and the id is read off it.
@@ -24,16 +24,19 @@ class DepositsService {
 ```
 
 ```tsx
-// no try/catch - a failed call resolves with undefined and lands in useContract
+// no try/catch - `contract` catches the rejection, and the error is already
+// serialized under the method's id by the time it gets there
 const {loading, errors} = useContract(Service.Deposit.create);
 
-const onSubmit = async () => {
-    const deposit = await Service.Deposit.create(payload);
-    if (deposit) close();
+const onSubmit = () => {
+    void contract(Service.Deposit.create, async () => {
+        await Service.Deposit.create(payload);
+        close();   // skipped when the call above rejects
+    });
 };
 ```
 
-`as Tracked<T>` widens every method of the service to reflect that:
+`Tracked<T>` maps each method to itself, so the cast is optional and there for naming what a registry holds:
 
 ```ts
 export const Service = {
@@ -79,20 +82,24 @@ Requires `zustand`, the store the contract state lives in.
 
 ## Behavior
 
-**A tracked method never rejects.** It resolves with `undefined` instead, and the serialized error sits in
-`useContract(method).errors` until the next call or a `resetContract`. `Tracked<T>` is the mapped type that widens each
-method's result to `R | undefined`.
+**A tracked method rejects with the error it was given.** The wrapper serializes it under the method's id first, so it
+sits in `useContract(method).errors` until the next call or a `resetContract`, and then rethrows the original error
+rather than the serialized copy - a call site that catches one wants the error itself.
+
+Rethrowing is what lets a caller stop. Wrap the call in [`contract`](../../utils/contract) and everything the procedure
+was going to do next - close a panel, refetch, navigate - is skipped when the call fails, without the call site testing
+anything.
 
 **A synchronous method stays synchronous.** The wrapper only chains onto the result when the original returns a
-thenable; a sync method that throws returns `undefined` on the spot.
+thenable; a sync method that throws throws on the spot, with its failure already recorded.
 
 **Without a serializer** the error is still caught, and stored as `String(error)` under an `UNHANDLED_EXCEPTION` code.
 Register [`ErrorSerializer`](../../utils/error-serialization) plugins to get validation fields, status codes and global
 messages instead.
 
-**Errors serialize once.** A `contract()` whose procedure calls tracked methods adopts the failure they already
-serialized and keys it under its own id, so an `ErrorSerializer.subscribe` side effect - a toast, a log - fires a single
-time.
+**Errors serialize once per failure that reaches a runner.** A `contract()` whose procedure swallows a tracked
+failure - its own `try/catch`, a call it never awaits - adopts the error that call already serialized and keys it under
+its own id, rather than serializing it again.
 
 **Decorator order matters.** Decorators apply bottom-up, so one listed *below* a method-level `@Tracked` runs inside
 the tracked call and its throw is caught, while one listed *above* wraps the tracked call and runs outside it.

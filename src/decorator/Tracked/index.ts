@@ -8,8 +8,12 @@ import { ErrorSerializer } from "@/utils/error-serialization/ErrorSerializer";
 type AnyFn = (...args: ExpectedAny[]) => unknown;
 
 /**
- * The shape a `@Tracked` class takes on: a failed call resolves with `undefined`
- * instead of throwing, so every tracked method widens its result.
+ * The shape a `@Tracked` class takes on. A tracked method records its failure
+ * and rethrows it, so every signature survives the decorator unchanged and this
+ * maps each method to itself.
+ *
+ * It is kept so a service registry can keep naming what it holds; the cast is
+ * optional and adds nothing to the type.
  *
  * @example
  * ```ts
@@ -21,11 +25,7 @@ type AnyFn = (...args: ExpectedAny[]) => unknown;
  * @public
  */
 export type Tracked<T> = {
-  [K in keyof T]: T[K] extends (...args: infer A) => Promise<infer R>
-    ? (...args: A) => Promise<R | undefined>
-    : T[K] extends (...args: infer A) => infer R
-      ? (...args: A) => R | undefined
-      : T[K];
+  [K in keyof T]: T[K];
 };
 
 /**
@@ -71,14 +71,24 @@ function isThenable(value: unknown): value is PromiseLike<unknown> {
   return typeof (value as PromiseLike<unknown> | null)?.then === "function";
 }
 
-function settleFailure(id: string, serializer: ErrorSerializer | undefined, error: unknown): undefined {
+/**
+ * Records the failure under `id` and hands the original error back to the
+ * caller.
+ *
+ * The error is rethrown as it was thrown, not as the `AppErrorResponse` the
+ * store keeps: a call site that catches one wants the error itself, and
+ * `contract` reads the serialized copy off the store.
+ *
+ * @internal
+ */
+function settleFailure(id: string, serializer: ErrorSerializer | undefined, error: unknown): never {
   failContract({ id, errors: resolveSerializer(serializer).process(error) });
-  return undefined;
+  throw error;
 }
 
 /**
- * Wraps a function so it runs as a contract: loading on, error caught,
- * serialized and stored under `id`, `undefined` returned in its place.
+ * Wraps a function so it runs as a contract: loading on, and a failure
+ * serialized and stored under `id` on its way past.
  *
  * A synchronous function stays synchronous: the wrapper only chains onto the
  * result when the original returns a thenable.
@@ -93,7 +103,7 @@ function track(fn: AnyFn, id: string, serializer?: ErrorSerializer): Tagged {
     try {
       result = fn.apply(this, args);
     } catch (error) {
-      return settleFailure(id, serializer, error);
+      settleFailure(id, serializer, error);
     }
 
     if (!isThenable(result)) {
@@ -101,12 +111,16 @@ function track(fn: AnyFn, id: string, serializer?: ErrorSerializer): Tagged {
       return result;
     }
 
-    return Promise.resolve(result)
-      .then((value) => {
+    return Promise.resolve(result).then(
+      (value) => {
         successContract(id);
         return value;
-      })
-      .catch((error) => settleFailure(id, serializer, error));
+      },
+      // The second argument rather than `.catch`: a rejection handler chained
+      // after `.then` would also catch whatever that handler throws, and record
+      // a success path's error under this id.
+      (error) => settleFailure(id, serializer, error)
+    );
   } as Tagged;
 
   Object.defineProperty(tracked, "name", { value: fn.name, configurable: true });
@@ -143,8 +157,8 @@ function trackClass<T extends abstract new (...args: unknown[]) => unknown>(valu
 
 /**
  * Class or method decorator that runs a function as a tracked contract: it
- * flips loading on under a stable id, catches whatever the function throws,
- * serializes it into the contract store and resolves with `undefined`.
+ * flips loading on under a stable id, serializes whatever the function throws
+ * into the contract store, and rethrows it.
  *
  * @remarks
  * On a class, every prototype method is tracked under `ClassName.methodName`.
@@ -152,9 +166,11 @@ function trackClass<T extends abstract new (...args: unknown[]) => unknown>(valu
  * doubles as the `usePing` channel and as the key for `contract`, `useContract`
  * and `resetContract`: pass the method itself and the id is read off it.
  *
- * A tracked method never rejects, so call sites need no `try/catch`; read the
- * outcome through `useContract`. A `contract()` built from tracked calls picks
- * up their failures too, and keys them under its own id.
+ * A tracked method rejects like any other, so a caller that must not continue
+ * past a failure gets to stop by default; `contract` catches the rejection and
+ * `useContract` reads the outcome. Wrap the call in `contract` rather than in a
+ * `try/catch` - the error is already serialized and stored by the time it
+ * surfaces.
  *
  * Errors serialize with `@Tracked({ serializer })`. Without one they are stored
  * raw, as `String(error)` under an `UNHANDLED_EXCEPTION` code.

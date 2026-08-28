@@ -63,9 +63,9 @@ export function failureCheckpoint(): number {
 }
 
 /**
- * The failure recorded after `checkpoint`, if any. A `@Tracked` method swallows
- * its own error, so an enclosing `contract()` sees a resolved procedure and asks
- * here whether that resolution was real.
+ * The failure recorded after `checkpoint`, if any. A procedure that swallows a
+ * `@Tracked` method's rejection resolves as though nothing went wrong, so an
+ * enclosing `contract()` asks here whether that resolution was real.
  *
  * @internal
  */

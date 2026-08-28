@@ -54,10 +54,11 @@ export interface ContractOptions<R = unknown> {
  * carries no serializer, so pass one in `options`. Errors are surfaced through
  * `onError` and `useContract`, never rethrown — call sites need no `try/catch`.
  *
- * A `@Tracked` method handles its own error and resolves with `undefined`, so a
- * procedure built from tracked calls resolves even when a step failed. The
- * contract therefore also fails when a tracked call fails while it runs, and
- * adopts that already-serialized error instead of serializing it a second time.
+ * A `@Tracked` method rejects, so a failed step aborts the rest of the
+ * procedure and the rejection lands here: whatever the procedure was going to do
+ * next — close a panel, refetch, navigate — does not happen. A procedure that
+ * swallows a tracked failure itself still fails the contract, which adopts the
+ * error that call already serialized rather than serializing it a second time.
  *
  * @typeParam R - The procedure's resolved value.
  * @param target - A `@Tracked` function or a string id.
