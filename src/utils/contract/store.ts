@@ -51,7 +51,7 @@ const activeRuns = new Map<string, number>();
  * @internal
  */
 let failureSequence = 0;
-let latestFailure: Nullable<{ sequence: number; id: string; errors: AppErrorResponse }> = null;
+let latestFailure: Nullable<{ sequence: number; id: string; errors: AppErrorResponse; error: unknown }> = null;
 
 /**
  * Current position in the failure sequence, taken before a procedure starts.
@@ -63,15 +63,20 @@ export function failureCheckpoint(): number {
 }
 
 /**
- * The failure recorded after `checkpoint`, if any. A procedure that swallows a
- * `@Tracked` method's rejection resolves as though nothing went wrong, so an
- * enclosing `contract()` asks here whether that resolution was real.
+ * The failure recorded after `checkpoint`, if any, with the value that was
+ * thrown beside its serialized copy.
+ *
+ * An enclosing `contract()` reads it twice. On a resolved procedure it answers
+ * whether that resolution was real: a procedure that swallows a `@Tracked`
+ * method's rejection resolves as though nothing went wrong. On a rejected one it
+ * answers whether the error arriving has already been serialized, so the same
+ * failure is not processed a second time.
  *
  * @internal
  */
-export function failureSince(checkpoint: number): Nullable<{ id: string; errors: AppErrorResponse }> {
+export function failureSince(checkpoint: number): Nullable<{ id: string; errors: AppErrorResponse; error: unknown }> {
   if (!latestFailure || latestFailure.sequence <= checkpoint) return null;
-  return { id: latestFailure.id, errors: latestFailure.errors };
+  return { id: latestFailure.id, errors: latestFailure.errors, error: latestFailure.error };
 }
 
 /** Marks a contract as running and clears its previous error. */
@@ -100,12 +105,18 @@ export function successContract(id: string): void {
   });
 }
 
-/** Records a serialized error for a contract and stops its loading state. */
-export function failContract(payload: { id: string; errors: AppErrorResponse }): void {
+/**
+ * Records a serialized error for a contract and stops its loading state.
+ *
+ * `error` is the value that was thrown, kept so an enclosing `contract()` can
+ * recognise the same failure arriving as a rejection and reuse the serialized
+ * copy instead of producing a second one.
+ */
+export function failContract(payload: { id: string; errors: AppErrorResponse; error?: unknown }): void {
   const depth = settleRun(payload.id);
 
   failureSequence += 1;
-  latestFailure = { sequence: failureSequence, id: payload.id, errors: payload.errors };
+  latestFailure = { sequence: failureSequence, id: payload.id, errors: payload.errors, error: payload.error };
 
   contractStore.setState((state) => ({
     contracts: { ...state.contracts, [payload.id]: { loading: depth > 0, errors: payload.errors } },

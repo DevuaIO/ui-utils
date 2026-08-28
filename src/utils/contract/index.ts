@@ -117,8 +117,14 @@ export async function contract<R = unknown>(
     options?.onSuccess?.(result);
     return result;
   } catch (err) {
-    const serialized = serializer.process(err);
-    failContract({ id, errors: serialized });
+    // A `@Tracked` call serializes its own failure before rethrowing it, and an
+    // `ErrorSerializer.subscribe` side effect - a toast, a log - fires once per
+    // `process`. So the error the store already holds for this very throw is
+    // reused, and only an error raised by the procedure itself is processed here.
+    const recorded = failureSince(checkpoint);
+    const serialized = recorded && recorded.error === err ? recorded.errors : serializer.process(err);
+
+    failContract({ id, errors: serialized, error: err });
     options?.onError?.(serialized);
     return undefined;
   } finally {

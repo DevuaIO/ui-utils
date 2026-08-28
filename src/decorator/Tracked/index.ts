@@ -82,7 +82,7 @@ function isThenable(value: unknown): value is PromiseLike<unknown> {
  * @internal
  */
 function settleFailure(id: string, serializer: ErrorSerializer | undefined, error: unknown): never {
-  failContract({ id, errors: resolveSerializer(serializer).process(error) });
+  failContract({ id, errors: resolveSerializer(serializer).process(error), error });
   throw error;
 }
 

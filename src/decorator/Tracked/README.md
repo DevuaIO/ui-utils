@@ -97,9 +97,10 @@ thenable; a sync method that throws throws on the spot, with its failure already
 Register [`ErrorSerializer`](../../utils/error-serialization) plugins to get validation fields, status codes and global
 messages instead.
 
-**Errors serialize once per failure that reaches a runner.** A `contract()` whose procedure swallows a tracked
-failure - its own `try/catch`, a call it never awaits - adopts the error that call already serialized and keys it under
-its own id, rather than serializing it again.
+**Errors serialize once.** The wrapper keeps the value it threw beside the serialized copy, so a `contract()` the
+rejection reaches recognises it and reuses that copy rather than processing it again - and so does one whose procedure
+swallowed the failure instead of rethrowing it. An `ErrorSerializer.subscribe` side effect - a toast, a log - therefore
+fires a single time no matter how many contracts the failure passes through.
 
 **Decorator order matters.** Decorators apply bottom-up, so one listed *below* a method-level `@Tracked` runs inside
 the tracked call and its throw is caught, while one listed *above* wraps the tracked call and runs outside it.

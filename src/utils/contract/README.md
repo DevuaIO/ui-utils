@@ -88,7 +88,9 @@ const result = await run();
 const failed = failureSince(checkpoint);   // did anything fail while we ran?
 ```
 
-If something failed, the contract fails too and keys that already-serialized error under its own id. The error is
+If something failed, the contract fails too and keys that already-serialized error under its own id. The `catch` does
+the same by identity: the store keeps the value each failure was thrown with, so an error that arrives as a rejection
+having already been serialized by a tracked call is reused rather than processed again. Either way the error is
 serialized once, so an `ErrorSerializer.subscribe` side effect - a toast, a log - fires a single time no matter how many
 contracts the failure passes through.
 
