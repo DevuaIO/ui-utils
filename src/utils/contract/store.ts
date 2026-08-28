@@ -63,6 +63,22 @@ export function failureCheckpoint(): number {
 }
 
 /**
+ * The serialized copy of `error`, if that is the failure the store last
+ * recorded.
+ *
+ * A `@Tracked` method that calls another one rethrows what the inner call
+ * already serialized, so the outer wrapper asks here rather than processing the
+ * same error a second time - which would run every
+ * `ErrorSerializer.subscribe` side effect once per level of nesting.
+ *
+ * @internal
+ */
+export function serializedFailureFor(error: unknown): Nullable<AppErrorResponse> {
+  if (!latestFailure || latestFailure.error !== error) return null;
+  return latestFailure.errors;
+}
+
+/**
  * The failure recorded after `checkpoint`, if any, with the value that was
  * thrown beside its serialized copy.
  *

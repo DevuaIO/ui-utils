@@ -1,6 +1,6 @@
 import { CONTRACT_ID, CONTRACT_SERIALIZER, PING_ID } from "@/symbol";
 import type { ExpectedAny } from "@/types";
-import { failContract, startContract, successContract } from "@/utils/contract/store";
+import { failContract, serializedFailureFor, startContract, successContract } from "@/utils/contract/store";
 // Imported from the module rather than the barrel: the barrel pulls in the Axios
 // and Zod plugins, and with them their optional peer dependencies.
 import { ErrorSerializer } from "@/utils/error-serialization/ErrorSerializer";
@@ -79,10 +79,17 @@ function isThenable(value: unknown): value is PromiseLike<unknown> {
  * store keeps: a call site that catches one wants the error itself, and
  * `contract` reads the serialized copy off the store.
  *
+ * An error the store already holds is recorded under this id as it stands. A
+ * tracked method that calls another one sees the inner failure on its way out,
+ * and processing it again would run every `ErrorSerializer.subscribe` side
+ * effect - a toast, a log - once per level of nesting.
+ *
  * @internal
  */
 function settleFailure(id: string, serializer: ErrorSerializer | undefined, error: unknown): never {
-  failContract({ id, errors: resolveSerializer(serializer).process(error), error });
+  const errors = serializedFailureFor(error) ?? resolveSerializer(serializer).process(error);
+
+  failContract({ id, errors, error });
   throw error;
 }
 
