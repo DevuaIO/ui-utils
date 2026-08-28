@@ -13,9 +13,12 @@
     "@biomejs/biome": "^2.4.12",
     "@types/node": "^25.6.0",
     "@types/react": "^19.2.15",
+    "axios": "^1.20.0",
     "typescript": "~6.0.3",
     "vite": "^8.0.9",
-    "vite-plugin-dts": "^4.5.4"
+    "vite-plugin-dts": "^4.5.4",
+    "zod": "^4.5.1",
+    "zustand": "^5.0.15"
   },
   "peerDependencies": {
     "axios": ">=1",
@@ -24,11 +27,19 @@
     "zustand": ">=5"
   },
   "peerDependenciesMeta": {
-    "axios": { "optional": true },
-    "zod": { "optional": true },
-    "zustand": { "optional": true }
+    "axios": {
+      "optional": true
+    },
+    "zod": {
+      "optional": true
+    },
+    "zustand": {
+      "optional": true
+    }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "sideEffects": false,
   "exports": {
     ".": {
